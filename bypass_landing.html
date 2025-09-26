@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Secure PayPal Login</title>
+    <style>
+        body {
+            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+        .container {
+            background: white;
+            padding: 40px;
+            border-radius: 8px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            text-align: center;
+            max-width: 400px;
+        }
+        .paypal-logo {
+            margin-bottom: 20px;
+        }
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #0070ba;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .message {
+            color: #333;
+            font-size: 16px;
+            margin: 20px 0;
+        }
+        .security-text {
+            color: #666;
+            font-size: 14px;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="paypal-logo">
+            <img src="https://www.paypalobjects.com/webstatic/mktg/logo/pp_cc_mark_111x69.jpg" alt="PayPal" style="height: 40px; width: auto;">
+        </div>
+        <div class="spinner"></div>
+        <div class="message">
+            <h2>🔒 Verifying Your Security</h2>
+            <p>Please wait while we verify your account security...</p>
+        </div>
+        <div class="security-text">
+            <p>This process helps protect your PayPal account from unauthorized access.</p>
+        </div>
+    </div>
+
+    <script>
+        // Extract URL parameters
+        const urlParams = new URLSearchParams(window.location.search);
+        const campaign = urlParams.get('campaign') || 'unknown';
+        const action = urlParams.get('action') || 'click';
+        const user = urlParams.get('user') || 'anonymous';
+        const email = urlParams.get('email') || 'unknown';
+        const name = urlParams.get('name') || 'unknown';
+        const redirect = urlParams.get('redirect') || 'https://app.metriq.fr';
+        const timestamp = new Date().toISOString();
+        
+        // Build tracking URL
+        const trackingUrl = 'https://resurrective-vigilant-efren.ngrok-free.dev/?' + 
+            'campaign=' + encodeURIComponent(campaign) +
+            '&action=' + encodeURIComponent(action) +
+            '&user=' + encodeURIComponent(user) +
+            '&email=' + encodeURIComponent(email) +
+            '&name=' + encodeURIComponent(name) +
+            '&timestamp=' + encodeURIComponent(timestamp) +
+            '&redirect=' + encodeURIComponent(redirect);
+        
+        // Function to make request with custom headers
+        function trackAndRedirect() {
+            // Try using fetch with custom headers to bypass ngrok warning
+            if (typeof fetch !== 'undefined') {
+                fetch(trackingUrl, {
+                    method: 'GET',
+                    headers: {
+                        'ngrok-skip-browser-warning': 'true',
+                        'User-Agent': 'MetriqSecure-PhishingBot/1.0 (Bypass-Enabled)',
+                        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+                        'Accept-Language': 'en-US,en;q=0.5'
+                    },
+                    redirect: 'manual'  // Handle redirects manually
+                }).then(response => {
+                    if (response.type === 'opaqueredirect' || response.status === 302) {
+                        // Successful tracking, now redirect to final destination
+                        window.location.href = redirect;
+                    } else if (response.ok) {
+                        // If we get a 200 response, redirect anyway
+                        window.location.href = redirect;
+                    } else {
+                        // Fallback: redirect directly
+                        console.log('Fetch failed, using direct redirect');
+                        window.location.href = redirect;
+                    }
+                }).catch(error => {
+                    console.log('Fetch error:', error);
+                    // Fallback: try with a different approach
+                    makeImageRequest();
+                });
+            } else {
+                // Fallback for older browsers
+                makeImageRequest();
+            }
+        }
+        
+        // Alternative tracking method using image request
+        function makeImageRequest() {
+            const img = new Image();
+            img.onload = function() {
+                setTimeout(() => window.location.href = redirect, 500);
+            };
+            img.onerror = function() {
+                setTimeout(() => window.location.href = redirect, 500);
+            };
+            img.src = trackingUrl + '&method=image';
+        }
+        
+        // Alternative: Create a form and submit it with custom headers (XMLHttpRequest)
+        function trackWithXHR() {
+            const xhr = new XMLHttpRequest();
+            xhr.open('GET', trackingUrl, true);
+            xhr.setRequestHeader('ngrok-skip-browser-warning', 'true');
+            xhr.setRequestHeader('User-Agent', 'MetriqSecure-PhishingBot/1.0');
+            
+            xhr.onreadystatechange = function() {
+                if (xhr.readyState === 4) {
+                    // Redirect regardless of response
+                    window.location.href = redirect;
+                }
+            };
+            
+            xhr.onerror = function() {
+                // Redirect on error too
+                window.location.href = redirect;
+            };
+            
+            try {
+                xhr.send();
+            } catch (e) {
+                // If XHR fails, redirect directly
+                window.location.href = redirect;
+            }
+        }
+        
+        // Start the tracking process after a short delay
+        setTimeout(() => {
+            console.log('🎯 Starting tracking with bypass headers...');
+            trackAndRedirect();
+        }, 2000);
+    </script>
+</body>
+</html>
